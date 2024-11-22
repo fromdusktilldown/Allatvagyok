@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Állatos személyiségteszt</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+
+        .quiz-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 500px;
+        }
+
+        #progress-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        #progress-bar {
+            height: 10px;
+            background-color: #3498db;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        #question {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+
+        #options {
+            display: flex;
+            flex-direction: column;
+        }
+
+        button {
+            padding: 10px;
+            margin: 5px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: block;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        img {
+            width: 200px; /* Képek 200x200-as méretben */
+            height: 200px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            object-fit: cover; /* A kép arányait megtartja, hogy ne torzuljon */
+        }
+
+        #result {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .image-option {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* Két oszlop */
+            gap: 5px; /* Képek közötti távolság csökkentése */
+            justify-items: center; /* Képek középre igazítása */
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="quiz-container">
+        <!-- Progress Bar -->
+        <div id="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+        <div id="question"></div>
+        <div id="options"></div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const questions = [
+            { question: "1. Hogy érzed magad egy nagyobb társaságban?", 
+              options: [
+                  { text: "Energikus vagyok és nyitott", points: { "farkas": 3, "elefánt": 3, "delfin": 3 } },
+                  { text: "Csendes vagyok, de élvezem", points: { "pingvin": 3, "oroszlán": 3, "gorilla":  3 } },
+                  { text: "Nem zavar, elvagyok", points: { "cetcápa": 2, "cápa": 2, "zsiráf": 2, "fóka": 2, "manátusz": 2 } },
+                  { text: "Kényelmetlenül érzem magam", points: { "tengeri teknős": 3, "jegesmedve": 2, "lajhár": 3 } }
+              ]
+            },
+            { question: "2. Hogyan viselkedsz, amikor probléma adódik?", 
+              options: [
+                  { text: "Bátor vagyok és gyorsan cselekszem", points: { "farkas": 3, "jegesmedve": 2, "cápa": 3, "oroszlán": 3 } },
+                  { text: "Türelmes és átgondolt", points: { "tengeri teknős": 3, "cetcápa": 2, "zsiráf": 3, "gorilla": 3, "manátusz": 2 } },
+                  { text: "Segítséget kérek másoktól", points: { "elefánt": 3, "delfin": 3, "pingvin": 2, "fóka": 2 } },
+                  { text: "Nem szeretem, ha zűrzavaros a helyzet, hajlamos vagyok bepánikolni", points: { "lajhár": 3 } }
+              ]
+            },
+            { question: "3. Hogyan szeretsz pihenni?", 
+              options: [
+                  { text: "Sétálok egyet a szabadban", points: { "farkas": 3, "jegesmedve": 3, "cetcápa": 2, "zsiráf": 2, } },
+                  { text: "Olvasok vagy más hobbit űzök", points: { "tengeri teknős": 3, "manátusz": 2, "lajhár": 3 } },
+                  { text: "Családdal vagy barátokkal töltöm az időt", points: { "elefánt": 3, "pingvin": 3, "oroszlán": 3, "gorilla": 3, "fóka": 2 } },
+                  { text: "Sportolok, pihenés közben is energikus vagyok", points: { "cápa": 3, "delfin": 3 } }
+              ]
+            },
+            { question: "4. Milyen típusú munkát szeretsz?", 
+              options: [
+                  { text: "Mindenképp a csapatmunkát", points: { "farkas": 3, "elefánt": 3, "pingvin": 3, "delfin": 3, "gorilla": 3 } },
+                  { text: "Szeretem a kihívásokat, amik önálló munkát igényelnek", points: { "jegesmedve": 3, "cápa": 3, "fóka": 2 } },
+                  { text: "A nyugodt és alapos munkát, amit rutinból tudok végezni", points: { "cetcápa": 3, "manátusz": 3, "tengeri teknős": 3, "zsiráf": 2, "lajhár": 3 } },
+                  { text: "Szeretem ha kizárólag csak én irányítom a dolgokat", points: { "oroszlán": 3 } }
+              ]
+            },
+            { question: "5. Hogyan reagálsz egy váratlan helyzetben?", 
+              options: [
+                  { text: "Azonnal cselekszem", points: { "jegesmedve": 3, "oroszlán": 3, "cápa": 3, "farkas": 3 } },
+                  { text: "Próbálok nyugodt maradni", points: { "cetcápa": 3, "zsiráf": 3, "fóka": 2 } },
+                  { text: "Kérdezek másoktól", points: { "elefánt": 3, "pingvin": 3, "delfin": 3 } },
+                  { text: "Szeretem átgondolni a lehetőségeimet", points: { "tengeri teknős": 3, "gorilla": 3, "lajhár": 3, "manáusz": 3 } }
+              ]
+            },
+            { question: "6. Válassz egy képet", 
+              isImageChoice: true,
+              options: [
+                  { imgSrc: "6/predator.jpg", points: { "farkas": 3, "jegesmedve": 3, "oroszlán": 3, "cápa": 3, } },
+                  { imgSrc: "6/different.jpg", points: { "pingvin": 3, "lajhár": 3 } },
+                  { imgSrc: "6/vízi.jpg", points: { "cetcápa": 3, "tengeri teknős": 3, "delfin": 3, "fóka": 3 } },
+                  { imgSrc: "6/vegetarian.jpg", points: { "manátusz": 3, "zsiráf": 3, "gorilla": 3, "elefánt": 3 } },
+              ]
+            },
+            { question: "7. Hogyan szeretsz a leginkább nyaralni?", 
+              options: [
+                  { text: "Tengerparton pihenek", points: { "cetcápa": 3, "delfin": 3, "fóka": 3, "cápa": 3, "tengeri teknős": 3 } },
+                  { text: "A természetben túrázok", points: { "farkas": 3, "elefánt": 3, "oroszlán": 3, "zsiráf": 3 } },
+                  { text: "Hegyek között felfedezek", points: { "jegesmedve": 3, "pingvin": 2 } },
+                  { text: "Egy pihenőhelyen, teljes nyugalomban", points: { "manátusz": 3, "gorilla": 3, "lajhár": 3, } }
+              ]
+            },
+            { question: "8. Szeretsz csapatban dolgozni?",
+                options: [
+                    { text: "Persze, mindig", points: { "farkas": 3, "elefánt": 3, "delfin": 3, "pingvin": 3 } },
+                    { text: "Inkább ritkán", points: { "zsiráf": 1 } },
+                    { text: "Csak a megfelelő emberekkel", points: { "oroszlán": 3, "gorilla": 3, "fóka": 2 } },
+                    { text: "Szinte soha", points: { "cetcápa": 3, "jegesmedve": 3, "tengeri teknős": 3, "cápa": 3, "lajhár": 3, "manátusz": 3 } }
+                ]
+            },
+            { question: "9. Hogyan jellemeznéd a munkához való hozzáállásodat?",
+                options: [
+                    { text: "Ambiciózus és céltudatos", points: { "farkas": 3, "cápa": 3, "oroszlán": 3, "jegesmedve": 3 } },
+                    { text: "Türelemmel dolgozom, apró lépésekkel", points: { "tengeri teknős": 3, "elefánt": 3, "pingvin": 3, "gorilla": 3, "fóka": 2 } },
+                    { text: "Kreatív és új ötleteket keresek", points: { "delfin": 3 } },
+                    { text: "Ha lehet, nem hajtom túl magam", points: { "cetcápa": 3, "zsiráf": 3, "lajhár": 3, "manátusz": 3 } }
+                ]
+            },
+            { question: "10. Hogyan szoktad kezelni a stresszes helyzeteket?",
+                options: [
+                    { text: "Nyugodtan, mindig a lényegre koncentrálok", points: { "zsiráf": 3, "gorilla": 3 } },
+                    { text: "Próbálom átvészelni, és remélem, hogy minden elrendeződik", points: { "cetcápa": 3, "lajhár": 3, "tengeri teknős": 3,"manátusz": 3 } },
+                    { text: "Aktívan próbálom megoldani, és ha kell, harcolok", points: { "jegesmedve": 3, "cápa": 3, "oroszlán": 3 } },
+                    { text: "Közösen kezeljük, mindig a csapatra támaszkodom", points: { "farkas": 3, "elefánt": 3, "pingvin": 3, "delfin": 3, "fóka": 2 } }
+                ]
+            },
+            { question: "11. Hogyan töltesz egy átlagos szabadnapot?",
+                options: [
+                    { text: "Aktívan, sportolok", points: { "cápa": 3, "jegesmedve": 3, "oroszlán": 2 } },
+                    { text: "Pihenek, otthon relaxálok", points: { "manátusz": 3, "lajhár": 3, "gorilla": 3 } },
+                    { text: "Barátaimmal vagyok, közösségi programokon", points: { "farkas": 3, "pingvin": 3, "delfin": 3 } },
+                    { text: "Egyedül, a természetben", points: { "cetcápa": 3, "tengeri teknős": 3, "zsiráf": 2 } }
+                ]
+            },
+            { question: "12. Melyik kép tükrözi legjobban a személyiségedet?",
+            isImageChoice: true,
+              options: [
+                  { imgSrc: "12/europeana-4l1ahap6HJA-unsplash 2.0.jpg", points: { "oroszlán": 3, "zsiráf": 3} },
+                  { imgSrc: "12/hans-eiskonen-8Pm_A-OHJGg-unsplash.jpg", points: { "elefánt": 3, "delfin": 3, "manátusz": 3 } },
+                  { imgSrc: "12/marek-okon-dHUhghn9mrI-unsplash 2.0.jpg", points: { "cetcápa": 3, "jegesmedve": 3, "cápa": 3, "fóka": 3, "pingvin": 3 } },
+                  { imgSrc: "12/paul-blenkhorn-SYV-U0LpN1Y-unsplash.jpg", points: { "farkas": 3, "tengeri teknős": 3, "gorilla": 3, "lajhár": 3 } },
+                ]
+            },
+            { question: "13. Hogyan érzed magad új emberek között?", 
+              options: [ 
+                  { text: "Gyorsan barátkozom", points: { "delfin": 3, "pingvin": 3, "farkas": 2, "fóka": 2 } }, 
+                  { text: "Kicsit visszahúzódó vagyok", points: { "tengeri teknős": 3, "jegesmedve": 3, "lajhár": 2 } }, 
+                  { text: "Teljesen magabiztos vagyok", points: { "oroszlán": 3, "gorilla": 3, "zsiráf": 2, "cápa": 2 } }, 
+                  { text: "Idő kell, hogy megnyíljak", points: { "manátusz": 3, "cetcápa": 2, "elefánt": 2 } } 
+                ] 
+            },
+            { question: "14. Ha egyedül maradnál egy szigeten, hogyan élnél túl?", 
+              options: [ 
+                  { text: "Próbálnék gyorsan alkalmazkodni és erőforrásokat kezdek keresni", points: { "farkas": 3, "oroszlán": 3, "cápa": 2 } }, 
+                  { text: "Nyugodt maradnék és élvezném a magányt, majd lesz valahogy", points: { "manátusz": 3, "tengeri teknős": 3, "lajhár": 2 } }, 
+                  { text: "Az első dolgom, hogy a homokba rajzolok egy messziről látható SOS feliratot", points: { "delfin": 3, "pingvin": 3, "fóka": 2, "elefánt": 3 } }, 
+                  { text: "Pánik, esélytelen, 5 percet nem élnék túl", points: { "jegesmedve": 2, "gorilla": 2, "zsiráf": 1, "cetcápa": 2 } } 
+                ] 
+            },
+            {  question: "15. Mi motivál téged leginkább?", 
+               options: [ 
+                  { text: "Célok elérése", points: { "oroszlán": 3, "cápa": 3, "gorilla": 2 } }, 
+                  { text: "A biztonság és stabilitás", points: { "elefánt": 3, "jegesmedve": 3, "zsiráf": 2 } }, 
+                  { text: "Kapcsolatok és közösség", points: { "pingvin": 3, "farkas": 3, "fóka": 3, "delfin": 3 } }, 
+                  { text: "Belső harmónia", points: { "tengeri teknős": 3, "manátusz": 3, "lajhár": 2 } } 
+                ] 
+            },
+            { question: "16. Milyen a hozzáállásod a változásokhoz?", 
+              options: [ 
+                  { text: "Izgalmas lehetőségekként tekintek rájuk", points: { "gorilla": 3, "delfin": 3, "pingvin": 2, "cetcápa": 2 } }, 
+                  { text: "Óvatosan közelítem meg őket", points: { "tengeri teknős": 3, "jegesmedve": 3, "elefánt": 3, "zsiráf": 3 } }, 
+                  { text: "Nehéz elfogadni őket", points: { "manátusz": 3, "lajhár": 3, "fóka": 3 } }, 
+                  { text: "Imádom az újdonságokat", points: { "oroszlán": 3, "cápa": 3, "farkas": 2 } } 
+                ] 
+            },
+            { question: "17. Hogyan kezeled a konfliktusokat?",
+              options: [
+                  { text: "Nyíltan és őszintén", points: { "oroszlán": 3, "cápa": 3, "gorilla": 3 } },
+                  { text: "Kerülöm, ha lehet", points: { "manátusz": 3, "lajhár": 2, "pingvin": 2, "zsiráf": 2 } },
+                  { text: "Együttműködő vagyok", points: { "delfin": 3, "fóka": 2, "tengeri teknős": 2 } },
+                  { text: "Harcolok, hogy megvédjem az igazamat", points: { "jegesmedve": 3, "farkas": 3, "cetcápa": 2, "elefánt": 3 } }
+                ]
+            },
+            { question: "18. Melyik táj vonz leginkább?",
+            isImageChoice: true,
+              options: [
+                  { imgSrc: "18/apijdékj.jpg", points: { "farkas": 3, "gorilla": 3, "lajhár":3 } },
+                  { imgSrc: "18/Amazing Weather Photographer of the Year Winners Celebrate the Beauty of Nature.jpg", points: { "pingvin": 3, "jegesmedve": 3, "fóka": 3 } },
+                  { imgSrc: "18/Underwater Paradise View.jpg", points: { "manátusz": 3, "delfin": 3, "cápa": 3, "cetcápa": 3, "tengeri teknős": 3 } },
+                  { imgSrc: "18/savannna.jpg", points: { "oroszlán": 3, "elefánt": 3, "zsiráf": 3 } },
+              ]
+            },
+            { question: "19. Milyik jelzővel tudnál a leginkább azonosulni?",
+                options: [
+                    { text: "Ragadozó", points: { "farkas": 3, "jegesmedve": 3, "cápa": 3, "oroszlán": 3 } },
+                    { text: "Áldozat", points: { "fóka": 3, "pingvin": 3 } },
+                    { text: "Préda", points: { "zsiráf": 3, "elefánt": 3, "tengeri teknős": 3 } },
+                    { text: "Békés", points: { "manátusz": 3, "lajhár": 3, "gorilla": 3, "cetcápa": 3, "delfin": 3 } }
+                ]
+            },
+            { question: "20. Mi lenne a leghasznosabb számodra?",
+                options: [
+                    { text: "Hegyes fogak", points: { "oroszlán": 3, "cápa": 3, "farkas": 3, "gorilla": 3 } },
+                    { text: "Légzés a víz alatt", points: { "manátusz": 3, "delfin": 3, "fóka": 3, "cetcápa": 3 } },
+                    { text: "Nagy karmok", points: { "lajhár": 3, "jegesmedve": 3 } },
+                    { text: "Védekezés, álca", points: { "tengeri teknős": 3, "elefánt": 3, "zsiráf": 3, "pingvin": 3 } }
+                ]
+            },
+            { question: "21. Mi fontosabb a számodra?",
+                options: [
+                    { text: "Kaja", points: { "cápa": 3, "manátusz": 3, "lajhár": 3, "jegesmedve": 3 } },
+                    { text: "Szórakozás", points: { "gorilla": 3, "delfin": 3, "tengeri teknős": 3} },
+                    { text: "Önrendelkezés", points: { "oroszlán": 3, "cetcápa": 3, "zsiráf": 3 } },
+                    { text: "A körülöttem lévők", points: { "farkas": 3, "fóka": 3, "elefánt": 3, "pingvin": 3 } }
+                ]
+            },
+            { question: "22. Melyik éghajlatot választanád?",
+                options: [
+                    { text: "Sarkvidéki, sarkköri éghajlat", points: { "jegesmedve": 3, "fóka": 3, "pingvin": 3, } },
+                    { text: "Óceáni éghajlat", points: { "cápa": 3, "delfin": 3, "manátusz": 3, "tengeri teknős": 3, "cetcápa": 3 } },
+                    { text: "Sivatagi éghajlat", points: { "oroszlán": 3, "zsiráf": 3, "elefánt": 3 } },
+                    { text: "Meleg-mérsékelt éghajlat", points: { "lajhár": 3, "gorilla": 3, "farkas": 3 } }
+                ]
+            },
+            { question: "23. Hol éreznéd magad jobban?",
+                options: [
+                    { text: "A magasban, fentről jobban láthatom a dolgokat", points: { "zsiráf": 3, "elefánt": 3 } },
+                    { text: "A víz az én otthonom", points: { "manátusz": 3, "cápa": 3, "cetcápa": 3, "delfin": 3, "tengeri teknős": 3, "fóka": 3, "pingvin": 3, "jegesmedve": 3 } },
+                    { text: "A magas fűben könnyen meg lehet bújni", points: { "oroszlán": 3 } },
+                    { text: "Az erdő fái között", points: { "gorilla": 3, "farkas": 3, "lajhár": 3 } }
+                ]
+            },
+            { question: "24. Melyik tevékenység tetszik a legjobban?",
+            isImageChoice: true,
+              options: [
+                  { imgSrc: "24/climbing icon.jpg", points: { "gorilla": 3, "lajhár": 3, } },
+                  { imgSrc: "24/Girls who surf.jpg", points: { "delfin": 3, "cápa": 3, "cetcápa": 3, "fóka": 3, } },
+                  { imgSrc: "24/sleeepinggo.jpg", points: { "elefánt": 3, "lajhár": 3, "manátusz": 3, "tengeri teknős": 3 } },
+                  { imgSrc: "24/Hiking Explained.jpg", points: { "zsiráf": 3, "pingvin": 3, "jegesmedve": 3, "farkas": 3, "oroszlán": 3 } },
+              ]
+            },
+            { question: "25. Mi vallana rád állatként?",
+                options: [
+                    { text: "Erős", points: { "oroszlán": 3, "gorilla": 3, "jegesmedve": 3 } },
+                    { text: "Lassú", points: { "manátusz": 3, "tengeri teknős": 3, "lajhár": 3, "zsiráf": 3 } },
+                    { text: "Pufók", points: { "elefánt": 3, "fóka": 3, "cetcápa": 3, "pingvin": 3 } },
+                    { text: "Gyors", points: { "farkas": 3, "cápa": 3, "delfin": 3, } }
+                ]
+            },
+            { question: "26. Miképp jönnének az utódok?",
+                options: [
+                    { text: "Tojásrakás", points: { "tengeri teknős": 3, "pingvin": 3 } },
+                    { text: "Elevenszülés", points: { "gorilla": 3, "cápa": 3, "manátusz": 3, "farkas": 3, "cetcápa": 3, "delfin": 3, "zsiráf": 3, "fóka": 3, "elefánt": 3, "jegesmedve": 3, "oroszlán": 3, "lajhár": 3 } },
+                ]
+            },
+            { question: "27. Melyik napszak?",
+                options: [
+                    { text: "Éjszaka", points: { "farkas": 3, "oroszlán": 3, "jegesmedve": 3, "cápa": 3 } },
+                    { text: "Reggel", points: { "pingvin": 3, "zsiráf": 3, "gorilla": 3, "lajhár": 3 } },
+                    { text: "Mindkettőt tudom élvezni", points: { "elefánt": 3, "delfin": 3, "fóka": 3, "manátusz": 3 } },
+                    { text: "Egyik sem", points: { "cetcápa": 3, "tengeri teknős": 3 } }
+                ]
+            },
+            { question: "28. Válassz",
+                options: [
+                    { text: "Szőr", points: { "farkas": 3, "oroszlán": 3, "jegesmedve": 3, "zsiráf": 3, "gorilla": 3, "lajhár": 3, } },
+                    { text: "Bőr", points: { "manátusz": 3, "fóka": 3, "elefánt": 3, "delfin": 3 } },
+                    { text: "Pikkely", points: { "cápa": 3, "cetcápa": 3, "tengeri teknős": 3 } },
+                    { text: "Toll", points: { "pingvin": 3, } }
+                ]
+            },
+            { question: "29. Mit ennél szívesebben?",
+                options: [
+                    { text: "Tenger gyümölcsei", points: { "cápa": 3, "cetcápa": 3, "tengeri teknős": 3, "pingvin": 3, "fóka": 3, "delfin": 3 } },
+                    { text: "Hús minden mennyiségben", points: { "farkas": 3, "jegesmedve": 3, "oroszlán": 3 } },
+                    { text: "Zöldségek, gyümölcsök", points: { "manátusz": 3, "lajhár": 3, "gorilla": 3, "zsiráf": 3, "elefánt": 3 } },
+                ]
+            },
+            { question: "30. Melyik helyszínen töltenél el egy napot?", 
+            isImageChoice: true,
+              options: [
+                  { imgSrc: "30/savannah szerk.jpg", points: { "elefánt": 3, "oroszlán": 3, "zsiráf": 3, } },
+                  { imgSrc: "30/Treehouse szerk.jpg", points: { "gorilla": 3, "lajhár": 3, } },
+                  { imgSrc: "30/strand.jpg", points: { "cápa": 3, "cetcápa": 3, "tengeri teknős": 3, "pingvin": 3, "fóka": 3, "delfin": 3, "manátusz": 3 } },
+                  { imgSrc: "30/Tranquil Vibes szerk.jpg", points: { "farkas": 3, "jegesmedve": 3 } },
+              ]
+            },
+        ];
+
+        let currentQuestionIndex = 0;
+        const scores = {};
+
+        const progressBar = document.getElementById("progress-bar");
+        const questionDiv = document.getElementById("question");
+        const optionsDiv = document.getElementById("options");
+        const resultDiv = document.getElementById("result");
+
+        function updateProgressBar() {
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressBar.style.width = progress + "%";
+        }
+
+        function showQuestion() {
+            if (currentQuestionIndex >= questions.length) {
+                showResult();
+                return;
+            }
+
+            updateProgressBar();
+
+            const currentQuestion = questions[currentQuestionIndex];
+            questionDiv.innerText = currentQuestion.question;
+            optionsDiv.innerHTML = "";
+
+            if (currentQuestion.isImageChoice) {
+                optionsDiv.style.display = "grid";
+                optionsDiv.style.gridTemplateColumns = "repeat(2, 1fr)"; // Két oszlop
+                optionsDiv.style.gap = "5px"; // Képek közötti távolság
+                optionsDiv.style.justifyItems = "center"; // Képek középre igazítása
+                currentQuestion.options.forEach(option => {
+                    const img = document.createElement("img");
+                    img.src = option.imgSrc;
+                    img.alt = "option image";
+                    img.addEventListener("click", () => {
+                        for (let key in option.points) {
+                            scores[key] = (scores[key] || 0) + option.points[key];
+                        }
+                        currentQuestionIndex++;
+                        showQuestion();
+                    });
+                    optionsDiv.appendChild(img);
+                });
+            } else {
+                optionsDiv.style.display = "block"; 
+                currentQuestion.options.forEach(option => {
+                    const button = document.createElement("button");
+                    button.innerText = option.text;
+                    button.addEventListener("click", () => {
+                        for (let key in option.points) {
+                            scores[key] = (scores[key] || 0) + option.points[key];
+                        }
+                        currentQuestionIndex++;
+                        showQuestion();
+                    });
+                    optionsDiv.appendChild(button);
+                });
+            }
+        }
+
+        function showResult() {
+            updateProgressBar();
+            questionDiv.style.display = "none";
+            optionsDiv.style.display = "none";
+            const maxScore = Math.max(...Object.values(scores));
+            const bestMatch = Object.keys(scores).find(key => scores[key] === maxScore);
+            resultDiv.innerText = `A te belső állatod egy ${bestMatch}!`;
+        }
+
+        showQuestion();
+    </script>
+</body>
+</html>
